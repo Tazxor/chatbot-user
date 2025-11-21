@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chatbot</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+
+        .chat-container {
+            width: 400px;
+            margin: 20px auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+        }
+
+        .messages {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #eee;
+            padding: 10px;
+        }
+
+        .input-box {
+            width: 100%;
+            padding: 5px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="chat-container">
+        <h1>Bienvenue sur mon Chatbot !</h1>
+
+        <div class="messages" id="messages"></div>
+
+        <form id="chatForm">
+            <input type="text" id="name" class="input-box" placeholder="NomUser">
+            <input type="text" id="inputMessage" class="input-box" placeholder="Contenu du message">
+            <button type="submit">Envoyer</button>
+        </form>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+
+    <script>
+ 
+        const socket = io();
+        const messagesDiv = document.getElementById("messages");
+        const inputMessage = document.getElementById("inputMessage");
+        const nameInput = document.getElementById("name");
+        const form = document.getElementById("chatForm");
+
+
+        // Fonction d'affichage des messages
+        function appendMessage(sender, message) {
+            const messageElement = document.createElement("div");
+            messageElement.textContent = `${sender}: ${message}`;
+            messagesDiv.appendChild(messageElement);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
+        }
+
+        // Réception d'un message venant du serveur
+        socket.on("chat message", (data) => {
+            appendMessage(data.sender, data.message);
+        });
+
+        // Envoi du message quand on soumet le formulaire
+        form.addEventListener("submit", (e) => {
+            e.preventDefault();
+
+            const sender = nameInput.value.trim();
+            const message = inputMessage.value.trim();
+
+            if (!sender || !message) return;
+
+            // Affichage côté client
+            appendMessage(sender, message);
+
+
+            // Envoi au serveur
+            socket.emit("chat message", {
+                sender: sender,
+                message: message
+            });
+
+            inputMessage.value = "";
+        });
+    </script>
+
+</body>
+
+</html>
