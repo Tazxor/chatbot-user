@@ -4,30 +4,135 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chatbot</title>
+    <title>Chatbot Stylisé</title>
     <style>
+        /* Réinitialisation de base */
         body {
-            font-family: sans-serif;
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f7f6; /* Arrière-plan clair pour le corps */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
         }
 
+        /* Conteneur principal du Chat (Adapté de .chat-container) */
         .chat-container {
             width: 400px;
-            margin: 20px auto;
-            border: 1px solid #ccc;
-            padding: 10px;
+            height: 550px; /* Augmenté pour l'esthétique */
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.15); /* Ombre plus marquée */
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background-color: white;
         }
 
+        /* Titre */
+        .chat-container h1 {
+            background-color: #007bff;
+            color: white;
+            padding: 15px;
+            margin: 0;
+            text-align: center;
+            font-size: 1.3em;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+
+        /* Zone d'affichage des messages (Adapté de .messages) */
         .messages {
-            height: 300px;
+            flex-grow: 1;
+            padding: 15px;
             overflow-y: scroll;
-            border: 1px solid #eee;
+            /* Retire la bordure redondante */
+            border: none; 
+            background-color: #f9f9f9;
+        }
+
+        /* Style des messages individuels */
+        .message {
+            margin-bottom: 12px;
+            padding: 10px 15px;
+            max-width: 85%;
+            border-radius: 20px;
+            line-height: 1.4;
+            word-wrap: break-word;
+            clear: both; /* Pour gérer l'alignement flottant */
+        }
+        
+        /* Style des messages de l'utilisateur (sera ajouté en JS) */
+        .message.user {
+            background-color: #007bff;
+            color: white;
+            float: right;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+
+        /* Style des messages des autres utilisateurs/bot */
+        .message.other {
+            background-color: #e6e6e6;
+            color: #333;
+            float: left;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+        
+        /* Style du nom de l'expéditeur */
+        .message strong {
+            display: block;
+            font-size: 0.9em;
+            margin-bottom: 2px;
+            opacity: 0.8;
+        }
+
+        /* Formulaire et zone de saisie */
+        #chatForm {
+            display: flex;
             padding: 10px;
+            border-top: 1px solid #eee;
+            background-color: white;
+            align-items: center;
         }
 
         .input-box {
-            width: 100%;
-            padding: 5px;
-            margin-top: 10px;
+            /* Adapté pour s'intégrer dans le flex */
+            padding: 10px 15px;
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            font-size: 1em;
+            margin: 0 5px; 
+            outline: none;
+        }
+        
+        #name {
+            width: 80px; /* Petit champ pour le nom */
+            flex-shrink: 0;
+        }
+        
+        #inputMessage {
+            flex-grow: 1; /* Champ de message prend l'espace */
+            margin-right: 10px;
+        }
+
+        /* Bouton d'envoi */
+        #chatForm button {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+        }
+
+        #chatForm button:hover {
+            background-color: #218838;
         }
     </style>
 </head>
@@ -37,11 +142,13 @@
     <div class="chat-container">
         <h1>Bienvenue sur mon Chatbot !</h1>
 
-        <div class="messages" id="messages"></div>
+        <div class="messages" id="messages">
+            <div class="message other"><strong>Bot</strong>: Bonjour ! Entrez votre nom et commencez à discuter.</div>
+        </div>
 
         <form id="chatForm">
-            <input type="text" id="name" class="input-box" placeholder="NomUser">
-            <input type="text" id="inputMessage" class="input-box" placeholder="Contenu du message">
+            <input type="text" id="name" class="input-box" placeholder="Votre nom" required>
+            <input type="text" id="inputMessage" class="input-box" placeholder="Contenu du message" required>
             <button type="submit">Envoyer</button>
         </form>
     </div>
@@ -49,18 +156,27 @@
     <script src="/socket.io/socket.io.js"></script>
 
     <script>
- 
         const socket = io();
         const messagesDiv = document.getElementById("messages");
         const inputMessage = document.getElementById("inputMessage");
         const nameInput = document.getElementById("name");
         const form = document.getElementById("chatForm");
 
-
-        // Fonction d'affichage des messages
+        // Fonction d'affichage des messages MISE À JOUR pour le style
         function appendMessage(sender, message) {
             const messageElement = document.createElement("div");
-            messageElement.textContent = `${sender}: ${message}`;
+            
+            // Détermine si c'est le message de l'utilisateur actuel (à améliorer si possible, 
+            // mais ici on suppose que l'utilisateur local est toujours "user")
+            // REMARQUE: Dans un chat réel, vous vérifieriez l'ID du socket ou l'authentification
+            const isLocalUser = (sender === nameInput.value.trim() && sender !== "Bot");
+            
+            messageElement.classList.add("message");
+            messageElement.classList.add(isLocalUser ? "user" : "other");
+            
+            // Création du contenu avec le nom en gras
+            messageElement.innerHTML = `<strong>${sender}</strong>: ${message}`;
+            
             messagesDiv.appendChild(messageElement);
             messagesDiv.scrollTop = messagesDiv.scrollHeight; // Auto-scroll
         }
@@ -74,13 +190,14 @@
         form.addEventListener("submit", (e) => {
             e.preventDefault();
 
-            const sender = nameInput.value.trim();
+            const sender = nameInput.value.trim() || "Anonyme"; // Utilise Anonyme si vide
             const message = inputMessage.value.trim();
 
-            if (!sender || !message) return;
+            if (!message) return; // Le nom peut être "Anonyme", mais le message doit exister
 
-            // Affichage côté client
-            appendMessage(sender, message);
+            // Affichage côté client (pour l'utilisateur local)
+            // L'ajout de cette ligne assure que le message est bien stylisé comme 'user'
+            appendMessage(sender, message); 
 
 
             // Envoi au serveur
